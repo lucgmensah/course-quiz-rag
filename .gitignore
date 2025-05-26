@@ -1,0 +1,7 @@
+data/*
+
+env/
+
+notebooks/base_donnee/
+
+*.pdf
