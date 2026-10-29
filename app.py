@@ -5,6 +5,7 @@ import uuid
 import streamlit as st
 from openai import OpenAI
 
+from rag.architecture import pipeline_dot, pipeline_stages
 from rag.config import load_settings
 from rag.fallback import list_samples, sample_pdf
 from rag.generate import GenerationFailed, Quiz
@@ -120,6 +121,24 @@ def render_quiz(result):
         st.metric("Score", f"{score(quiz, answers)} / {len(quiz.questions)}")
 
 
+def render_architecture_tab():
+    st.markdown("Le pipeline RAG réellement exécuté, avec les paramètres actuels de l'application.")
+    st.graphviz_chart(pipeline_dot(SETTINGS), use_container_width=True)
+    for i, stage in enumerate(pipeline_stages(SETTINGS), 1):
+        params = ", ".join(f"{k} : {v}" for k, v in stage["params"].items())
+        st.markdown(f"**{i}. {stage['name']}** : {stage['description']}" + (f" *({params})*" if params else ""))
+    result = st.session_state.get("result")
+    if result and result.prompt:
+        st.subheader("Dernière génération")
+        with st.expander("Passages récupérés"):
+            for p in result.sources.values():
+                st.markdown(f"*Page {p.page}* (score {p.score:.2f}) : {p.text}")
+        with st.expander("Prompt envoyé au modèle"):
+            st.code(result.prompt, language="text")
+    elif result:
+        st.caption("La dernière génération était un quiz de secours : aucun appel au modèle.")
+
+
 def render_about_tab():
     st.markdown(
         "Démo de génération de quiz par **RAG** : le cours est découpé, indexé avec des embeddings, "
@@ -135,7 +154,7 @@ def main():
     with quiz_tab:
         render_quiz_tab()
     with arch_tab:
-        st.info("Schéma de l'architecture à venir.")
+        render_architecture_tab()
     with about_tab:
         render_about_tab()
 
