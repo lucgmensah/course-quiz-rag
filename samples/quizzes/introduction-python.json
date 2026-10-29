@@ -1,0 +1,17 @@
+{"questions": [
+  {"question": "Sur quoi repose la syntaxe de Python pour délimiter les blocs de code ?",
+   "choices": ["Les accolades", "L'indentation", "Les points-virgules", "Les balises"],
+   "correct_index": 1, "explanation": "La syntaxe lisible de Python repose sur l'indentation.", "source_chunk_ids": ["p1-c0"]},
+  {"question": "Que signifie typage dynamique ?",
+   "choices": ["Le type est déclaré à la compilation", "Le type est déterminé à l'exécution", "Les variables n'ont pas de type", "Le type ne peut jamais changer"],
+   "correct_index": 1, "explanation": "Le type d'une variable est déterminé à l'exécution.", "source_chunk_ids": ["p1-c0"]},
+  {"question": "Quelle structure est immuable ?",
+   "choices": ["La liste", "Le dictionnaire", "Le tuple", "Aucune"],
+   "correct_index": 2, "explanation": "Un tuple ne peut pas être modifié après création.", "source_chunk_ids": ["p2-c0"]},
+  {"question": "Quel mot-clé définit une fonction ?",
+   "choices": ["func", "function", "def", "lambda"],
+   "correct_index": 2, "explanation": "Une fonction se définit avec le mot-clé def.", "source_chunk_ids": ["p3-c0"]},
+  {"question": "Que fait le mot-clé return ?",
+   "choices": ["Il répète une boucle", "Il renvoie une valeur à l'appelant", "Il importe un module", "Il crée une variable"],
+   "correct_index": 1, "explanation": "return renvoie une valeur à l'appelant.", "source_chunk_ids": ["p3-c0"]}
+]}

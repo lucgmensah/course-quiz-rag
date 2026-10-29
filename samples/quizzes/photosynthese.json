@@ -1,0 +1,17 @@
+{"questions": [
+  {"question": "Où se déroule la photosynthèse dans la cellule végétale ?",
+   "choices": ["Dans les mitochondries", "Dans les chloroplastes", "Dans le noyau", "Dans les ribosomes"],
+   "correct_index": 1, "explanation": "La photosynthèse a lieu dans les chloroplastes, riches en chlorophylle.", "source_chunk_ids": ["p1-c0"]},
+  {"question": "Que libère la photolyse de l'eau ?",
+   "choices": ["Du glucose", "Du dioxyde de carbone", "Du dioxygène", "De l'azote"],
+   "correct_index": 2, "explanation": "Casser les molécules d'eau libère du dioxygène pendant la phase claire.", "source_chunk_ids": ["p2-c0"]},
+  {"question": "Où se déroule le cycle de Calvin ?",
+   "choices": ["Dans les thylakoïdes", "Dans le stroma", "Dans la membrane cellulaire", "Dans la vacuole"],
+   "correct_index": 1, "explanation": "La phase sombre se déroule dans le stroma du chloroplaste.", "source_chunk_ids": ["p3-c0"]},
+  {"question": "Quelles molécules la phase claire fournit-elle à la phase sombre ?",
+   "choices": ["ATP et NADPH", "Glucose et amidon", "Eau et sels minéraux", "ADN et ARN"],
+   "correct_index": 0, "explanation": "L'énergie captée est stockée sous forme d'ATP et de NADPH.", "source_chunk_ids": ["p2-c0", "p3-c0"]},
+  {"question": "Quelle enzyme fixe le dioxyde de carbone dans le cycle de Calvin ?",
+   "choices": ["L'amylase", "La catalase", "La RuBisCO", "La pepsine"],
+   "correct_index": 2, "explanation": "La RuBisCO est l'enzyme clé de la fixation du CO2.", "source_chunk_ids": ["p3-c0"]}
+]}

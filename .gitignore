@@ -5,3 +5,10 @@ env/
 notebooks/base_donnee/
 
 *.pdf
+.venv/
+.superpowers/
+__pycache__/
+.pytest_cache/
+.env
+*.sqlite3
+!samples/*.pdf

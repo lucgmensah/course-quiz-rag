@@ -1,0 +1,11 @@
+.venv
+.git
+.superpowers
+.claude
+__pycache__
+.pytest_cache
+notebooks
+tests
+docs
+*.sqlite3
+.env
