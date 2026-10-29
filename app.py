@@ -30,7 +30,8 @@ def get_limiter() -> Limiter:
 
 def get_client():
     key = os.environ.get("OPENCODE_API_KEY")
-    return OpenAI(base_url=SETTINGS.llm_base_url, api_key=key, timeout=60, max_retries=1) if key else None
+    return OpenAI(base_url=SETTINGS.llm_base_url, api_key=key, timeout=60, max_retries=1,
+                  default_headers={"User-Agent": "course-quiz-rag/1.0"}) if key else None
 
 
 def current_visitor() -> str:
@@ -78,7 +79,8 @@ def render_quiz_tab():
                 digest = hashlib.sha256(data).hexdigest()
                 result = produce_quiz(get_client(), get_limiter(), current_visitor(),
                                       lambda: load_course(data, digest),
-                                      course, theme, EXERCISES[exercise], level, n, SETTINGS)
+                                      course, theme, EXERCISES[exercise], level, n, SETTINGS,
+                                      session_id=st.session_state.session_id)
         except (PdfRejected, ThemeNotFound, GenerationFailed) as exc:
             st.error(str(exc))
         except Exception:

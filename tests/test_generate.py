@@ -118,3 +118,15 @@ def test_completion_length_is_capped():
     client = FakeClient([quiz_json(question())])
     run(client)
     assert client.calls[0]["max_tokens"] == 4096
+
+
+def test_session_id_is_sent_as_opencode_session_header():
+    client = FakeClient([quiz_json(question())])
+    generate_quiz(client, PASSAGES, "qcm", "debutant", 1, load_settings(), session_id="sess-42")
+    assert client.calls[0]["extra_headers"] == {"x-opencode-session": "sess-42"}
+
+
+def test_no_session_header_without_session_id():
+    client = FakeClient([quiz_json(question())])
+    run(client)
+    assert not client.calls[0].get("extra_headers")

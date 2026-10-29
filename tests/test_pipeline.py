@@ -88,3 +88,14 @@ def test_capped_visitor_does_not_trigger_indexing(tmp_path):
     produce_quiz(Client(), lim, "v1", lambda: built.append(1) or coll, list_samples()[0],
                  "text", "qcm", "debutant", 1, s, embed=fake_embed)
     assert built == []
+
+
+def test_session_id_reaches_the_llm_call(tmp_path):
+    s, lim, coll = setup(tmp_path)
+    seen = []
+    client = Client()
+    original = client.chat.completions.create
+    client.chat.completions.create = lambda **kw: seen.append(kw) or original(**kw)
+    produce_quiz(client, lim, "v1", lambda: coll, list_samples()[0], "text", "qcm", "debutant", 1, s,
+                 embed=fake_embed, session_id="sess-7")
+    assert seen[0]["extra_headers"] == {"x-opencode-session": "sess-7"}

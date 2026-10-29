@@ -62,14 +62,18 @@ def _parse(raw: str, valid_ids: set[str], n: int) -> Quiz:
     return Quiz(questions=quiz.questions[:n])
 
 
-def generate_quiz(client, passages, exercise_type, level, n, settings: Settings) -> tuple[Quiz, str]:
+def generate_quiz(client, passages, exercise_type, level, n, settings: Settings,
+                  session_id: str | None = None) -> tuple[Quiz, str]:
     prompt = build_prompt(passages, exercise_type, level, n)
+    # OpenCode Go routes and caches per conversation: it expects a stable id in this header
+    headers = {"x-opencode-session": session_id} if session_id else None
     for attempt in range(2):
         try:
             response = client.chat.completions.create(
                 model=settings.llm_model,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=MAX_TOKENS,
+                extra_headers=headers,
             )
         except Exception as exc:
             if getattr(exc, "status_code", None) == 429 or "quota" in str(exc).lower():
