@@ -24,7 +24,7 @@ def _fallback(course: str, n: int, settings: Settings, reason: str) -> QuizResul
 
 def produce_quiz(client, limiter: Limiter, visitor: str, get_collection, fallback_course: str,
                  theme: str, exercise_type: str, level: str, n: int, settings: Settings,
-                 embed=None) -> QuizResult:
+                 embed=None, session_id: str | None = None) -> QuizResult:
     """Retrieve, generate and record usage; serve a pre-generated quiz when generation is unavailable."""
     if client is None:
         return _fallback(fallback_course, n, settings, "Aucune clé API configurée.")
@@ -34,7 +34,7 @@ def produce_quiz(client, limiter: Limiter, visitor: str, get_collection, fallbac
     passages = retrieve(get_collection(), theme, settings.top_k, embed=embed,
                         min_similarity=settings.min_similarity)
     try:
-        quiz, prompt = generate_quiz(client, passages, exercise_type, level, n, settings)
+        quiz, prompt = generate_quiz(client, passages, exercise_type, level, n, settings, session_id)
     except QuotaExhausted:
         return _fallback(fallback_course, n, settings, "Quota du modèle atteint.")
     except GenerationFailed:

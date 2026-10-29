@@ -23,3 +23,10 @@ def test_app_shows_three_tabs():
     at = AppTest.from_file(str(Path(__file__).resolve().parent.parent / "app.py")).run(timeout=60)
     assert not at.exception
     assert [t.label for t in at.tabs] == ["Quiz", "Architecture du RAG", "À propos"]
+
+
+def test_client_identifies_itself_with_its_own_user_agent(monkeypatch):
+    from app import get_client
+
+    monkeypatch.setenv("OPENCODE_API_KEY", "test-key")
+    assert get_client().default_headers["User-Agent"].startswith("course-quiz-rag/")
