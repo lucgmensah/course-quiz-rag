@@ -24,7 +24,7 @@ Without `OPENCODE_API_KEY` the app still runs and serves the pre-generated sampl
 
 ## Configuration
 
-Environment variables (defaults in `.env.example`): `OPENCODE_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL`, `MAX_PDF_MB`, `MAX_PAGES`, `CHUNK_SIZE`, `CHUNK_OVERLAP`, `TOP_K`, `VISITOR_DAILY_CAP`, `GLOBAL_DAILY_CAP`, `USAGE_DB`.
+Environment variables (defaults in `.env.example`): `OPENCODE_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL`, `MAX_PDF_MB`, `MAX_PAGES`, `CHUNK_SIZE`, `CHUNK_OVERLAP`, `TOP_K`, `VISITOR_DAILY_CAP`, `GLOBAL_DAILY_CAP`, `MAX_CHUNKS`, `MIN_SIMILARITY`, `TRUSTED_IP_HEADER`, `USAGE_DB`. `.streamlit/config.toml` caps uploads at 5 MB: raise `maxUploadSize` there if you raise `MAX_PDF_MB`.
 
 ## Docker / Dokploy
 

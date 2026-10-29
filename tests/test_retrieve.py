@@ -1,5 +1,7 @@
 from rag.ingest import Chunk, build_index
-from rag.retrieve import retrieve
+import pytest
+
+from rag.retrieve import ThemeNotFound, retrieve
 
 TOPICS = {
     "cats": "cats purr and chase mice",
@@ -35,8 +37,19 @@ def test_returns_page_numbers_and_best_match_first():
     assert passages[0].page == 1 and "cats" in passages[0].text
 
 
-def test_fewer_chunks_than_k_returns_all():
-    assert len(retrieve(make_collection(), "python", 10, embed=fake_embed)) == 3
+def test_irrelevant_chunks_are_dropped_even_when_k_is_large():
+    passages = retrieve(make_collection(), "python", 10, embed=fake_embed)
+    assert [p.page for p in passages] == [3]
+
+
+def test_score_is_cosine_similarity():
+    passages = retrieve(make_collection(), "ocean", 1, embed=fake_embed)
+    assert passages[0].score == pytest.approx(1.0, abs=1e-3)
+
+
+def test_unrelated_theme_raises_theme_not_found():
+    with pytest.raises(ThemeNotFound):
+        retrieve(make_collection(), "zzz", 3, embed=fake_embed)
 
 
 def test_empty_theme_covers_course():

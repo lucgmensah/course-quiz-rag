@@ -1,7 +1,7 @@
 import dataclasses
 
 from rag.config import load_settings
-from rag.limits import Limiter, visitor_id
+from rag.limits import Limiter, client_ip, visitor_id
 
 
 def make(tmp_path, today=lambda: "2026-10-29", **over):
@@ -38,3 +38,12 @@ def test_missing_ip_falls_back_to_session():
     assert visitor_id("sess-1", None) == visitor_id("sess-1", None)
     assert visitor_id("sess-1", None) != visitor_id("sess-2", None)
     assert visitor_id("sess-1", "1.2.3.4") == visitor_id("sess-2", "1.2.3.4")
+
+
+def test_client_ip_takes_the_proxy_added_rightmost_entry():
+    headers = {"X-Forwarded-For": "6.6.6.6, 9.9.9.9"}
+    assert client_ip(headers, "X-Forwarded-For") == "9.9.9.9"
+
+
+def test_client_ip_missing_header_is_none():
+    assert client_ip({}, "X-Forwarded-For") is None

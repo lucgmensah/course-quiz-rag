@@ -1,5 +1,4 @@
 import json
-import re
 
 from pydantic import BaseModel, Field, ValidationError
 
@@ -10,13 +9,13 @@ from rag.retrieve import Passage
 class Question(BaseModel):
     question: str
     choices: list[str] = Field(min_length=4, max_length=4)
-    correct_index: int = Field(ge=0, le=3)
+    correct_index: int = Field(ge=0, le=3, strict=True)
     explanation: str
     source_chunk_ids: list[str]
 
 
 class Quiz(BaseModel):
-    questions: list[Question]
+    questions: list[Question] = Field(min_length=1)
 
 
 class QuotaExhausted(Exception):
@@ -47,9 +46,20 @@ def build_prompt(passages: list[Passage], exercise_type: str, level: str, n: int
     )
 
 
-def _parse(raw: str) -> Quiz:
-    text = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
-    return Quiz.model_validate(json.loads(text))
+MAX_TOKENS = 4096
+
+
+def _parse(raw: str, valid_ids: set[str], n: int) -> Quiz:
+    """Extract the JSON object (tolerating prose or fences around it) and check it against the passages."""
+    start, end = raw.find("{"), raw.rfind("}")
+    if start < 0 or end < start:
+        raise ValueError("no JSON object")
+    quiz = Quiz.model_validate(json.loads(raw[start:end + 1]))
+    for question in quiz.questions:
+        question.source_chunk_ids = [i for i in question.source_chunk_ids if i in valid_ids]
+        if not question.source_chunk_ids:
+            raise ValueError("question without a known source passage")
+    return Quiz(questions=quiz.questions[:n])
 
 
 def generate_quiz(client, passages, exercise_type, level, n, settings: Settings) -> tuple[Quiz, str]:
@@ -59,13 +69,14 @@ def generate_quiz(client, passages, exercise_type, level, n, settings: Settings)
             response = client.chat.completions.create(
                 model=settings.llm_model,
                 messages=[{"role": "user", "content": prompt}],
+                max_tokens=MAX_TOKENS,
             )
         except Exception as exc:
             if getattr(exc, "status_code", None) == 429 or "quota" in str(exc).lower():
                 raise QuotaExhausted(str(exc)) from exc
             raise GenerationFailed(f"Erreur du modèle : {exc}") from exc
         try:
-            return _parse(response.choices[0].message.content or ""), prompt
+            return _parse(response.choices[0].message.content or "", {p.id for p in passages}, n), prompt
         except (ValueError, ValidationError):
             continue
     raise GenerationFailed("Le modèle n'a pas renvoyé un quiz valide.")

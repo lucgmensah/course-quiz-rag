@@ -9,6 +9,7 @@ def test_defaults_match_spec(monkeypatch):
     assert (s.max_pdf_mb, s.max_pages) == (5, 40)
     assert (s.chunk_size, s.chunk_overlap, s.top_k) == (800, 100, 6)
     assert (s.visitor_daily_cap, s.global_daily_cap) == (5, 100)
+    assert (s.max_chunks, s.min_similarity) == (500, 0.10)
 
 
 def test_env_overrides(monkeypatch):

@@ -64,3 +64,31 @@ def test_build_index_stores_page_metadata():
     got = coll.get(ids=["p2-c0"], include=["metadatas", "documents"])
     assert got["metadatas"][0]["page"] == 2
     assert got["documents"][0] == "world!"
+
+
+def test_owner_password_only_pdf_is_readable(settings):
+    data = encrypt_pdf(make_pdf(["Open text"]), user_password="")
+    assert extract_pages(data, settings)[0].strip() == "Open text"
+
+
+def test_too_many_chunks_rejected(settings):
+    s = dataclasses.replace(settings, chunk_size=100, chunk_overlap=0, max_chunks=3)
+    with pytest.raises(PdfRejected):
+        split_pages(["a" * 1000], s)
+
+
+def test_old_collections_are_evicted():
+    from rag import ingest
+
+    fake = lambda texts: [[1.0, 1.0] for _ in texts]
+    for _ in range(ingest.MAX_COLLECTIONS + 5):
+        ingest.build_index([Chunk("p1-c0", 1, "x")], embed=fake)
+    assert len(ingest._client.list_collections()) <= ingest.MAX_COLLECTIONS
+
+
+def test_drop_index_removes_collection():
+    from rag import ingest
+
+    coll = ingest.build_index([Chunk("p1-c0", 1, "x")], embed=lambda t: [[1.0, 1.0]] * len(t))
+    ingest.drop_index(coll)
+    assert coll.name not in [c if isinstance(c, str) else c.name for c in ingest._client.list_collections()]

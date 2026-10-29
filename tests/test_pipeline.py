@@ -37,7 +37,7 @@ def setup(tmp_path, **over):
 
 
 def call(client, s, lim, coll, client_ok=True):
-    return produce_quiz(client if client_ok else None, lim, "v1", coll, list_samples()[0],
+    return produce_quiz(client if client_ok else None, lim, "v1", lambda: coll, list_samples()[0],
                         "text", "qcm", "debutant", 1, s, embed=fake_embed)
 
 
@@ -69,3 +69,22 @@ def test_quota_error_serves_fallback_and_does_not_count(tmp_path):
 def test_missing_api_key_serves_fallback(tmp_path):
     s, lim, coll = setup(tmp_path)
     assert call(None, s, lim, coll).fallback_reason
+
+
+def test_failed_generation_still_counts_toward_the_cap(tmp_path):
+    import pytest
+    from rag.generate import GenerationFailed
+
+    s, lim, coll = setup(tmp_path, visitor_daily_cap=1)
+    with pytest.raises(GenerationFailed):
+        call(Client(reply="not json"), s, lim, coll)
+    assert not lim.allow("v1")
+
+
+def test_capped_visitor_does_not_trigger_indexing(tmp_path):
+    s, lim, coll = setup(tmp_path, visitor_daily_cap=1)
+    lim.record("v1")
+    built = []
+    produce_quiz(Client(), lim, "v1", lambda: built.append(1) or coll, list_samples()[0],
+                 "text", "qcm", "debutant", 1, s, embed=fake_embed)
+    assert built == []

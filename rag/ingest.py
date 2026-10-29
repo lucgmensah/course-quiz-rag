@@ -1,5 +1,6 @@
 import io
 import uuid
+from collections import deque
 from dataclasses import dataclass
 from typing import Callable
 
@@ -11,6 +12,9 @@ from rag.config import Settings
 
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 _model = None
+MAX_COLLECTIONS = 20
+_client = chromadb.EphemeralClient()
+_names: deque[str] = deque()
 
 
 class PdfRejected(Exception):
@@ -29,7 +33,7 @@ def extract_pages(data: bytes, settings: Settings) -> list[str]:
         raise PdfRejected(f"Le PDF dépasse {settings.max_pdf_mb} Mo.")
     try:
         reader = PdfReader(io.BytesIO(data))
-        if reader.is_encrypted:
+        if reader.is_encrypted and not reader.decrypt(""):
             raise PdfRejected("Le PDF est protégé par un mot de passe.")
         if len(reader.pages) > settings.max_pages:
             raise PdfRejected(f"Le PDF dépasse {settings.max_pages} pages.")
@@ -53,6 +57,8 @@ def split_pages(pages: list[str], settings: Settings) -> list[Chunk]:
             chunks.append(Chunk(f"p{number}-c{n}", number, piece))
             if start + settings.chunk_size >= len(text):
                 break
+    if len(chunks) > settings.max_chunks:
+        raise PdfRejected(f"Le cours est trop long ({len(chunks)} passages, maximum {settings.max_chunks}).")
     return chunks
 
 
@@ -67,7 +73,11 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
 
 def build_index(chunks: list[Chunk], embed: Callable | None = None):
     embed = embed or embed_texts
-    collection = chromadb.EphemeralClient().create_collection(f"course-{uuid.uuid4().hex}")
+    name = f"course-{uuid.uuid4().hex}"
+    collection = _client.create_collection(name, metadata={"hnsw:space": "cosine"})
+    _names.append(name)
+    while len(_names) > MAX_COLLECTIONS:
+        _delete(_names.popleft())
     collection.add(
         ids=[c.id for c in chunks],
         documents=[c.text for c in chunks],
@@ -75,3 +85,17 @@ def build_index(chunks: list[Chunk], embed: Callable | None = None):
         metadatas=[{"page": c.page} for c in chunks],
     )
     return collection
+
+
+def _delete(name: str) -> None:
+    try:
+        _client.delete_collection(name)
+    except Exception:
+        pass
+
+
+def drop_index(collection) -> None:
+    """Free a course index as soon as the session no longer needs it."""
+    if collection.name in _names:
+        _names.remove(collection.name)
+    _delete(collection.name)

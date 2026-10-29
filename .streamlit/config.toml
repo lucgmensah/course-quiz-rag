@@ -1,0 +1,6 @@
+[server]
+maxUploadSize = 5
+
+[client]
+showErrorDetails = "none"
+toolbarMode = "minimal"

@@ -12,6 +12,14 @@ def visitor_id(session_id: str, ip: str | None) -> str:
     return hashlib.sha256((ip or f"session:{session_id}").encode()).hexdigest()[:16]
 
 
+def client_ip(headers, header: str) -> str | None:
+    """IP added by the trusted proxy: the right-most entry, since the left ones are client-controlled."""
+    value = headers.get(header)
+    if not value:
+        return None
+    return value.split(",")[-1].strip() or None
+
+
 class Limiter:
     def __init__(self, db_path: str, settings: Settings, today: Callable[[], str] | None = None):
         self._path = db_path

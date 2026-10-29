@@ -13,6 +13,8 @@ class Settings:
     llm_model: str
     visitor_daily_cap: int
     global_daily_cap: int
+    max_chunks: int
+    min_similarity: float
 
 
 def load_settings() -> Settings:
@@ -27,4 +29,6 @@ def load_settings() -> Settings:
         llm_model=env("LLM_MODEL", "glm-5.2"),
         visitor_daily_cap=int(env("VISITOR_DAILY_CAP", 5)),
         global_daily_cap=int(env("GLOBAL_DAILY_CAP", 100)),
+        max_chunks=int(env("MAX_CHUNKS", 500)),
+        min_similarity=float(env("MIN_SIMILARITY", 0.10)),
     )

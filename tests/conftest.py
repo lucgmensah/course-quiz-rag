@@ -28,11 +28,11 @@ def make_pdf(pages: list[str]) -> bytes:
     return out.encode("latin-1")
 
 
-def encrypt_pdf(data: bytes) -> bytes:
+def encrypt_pdf(data: bytes, user_password: str = "secret") -> bytes:
     from pypdf import PdfReader
 
     writer = PdfWriter(clone_from=PdfReader(io.BytesIO(data)))
-    writer.encrypt("secret", algorithm="RC4-128")
+    writer.encrypt(user_password, owner_password="owner", algorithm="RC4-128")
     buf = io.BytesIO()
     writer.write(buf)
     return buf.getvalue()

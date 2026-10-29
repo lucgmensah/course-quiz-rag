@@ -9,9 +9,10 @@ from rag.architecture import pipeline_dot, pipeline_stages
 from rag.config import load_settings
 from rag.fallback import list_samples, sample_pdf
 from rag.generate import GenerationFailed, Quiz
-from rag.ingest import PdfRejected, build_index, extract_pages, split_pages
-from rag.limits import Limiter, visitor_id
+from rag.ingest import PdfRejected, build_index, drop_index, extract_pages, split_pages
+from rag.limits import Limiter, client_ip, visitor_id
 from rag.pipeline import produce_quiz
+from rag.retrieve import ThemeNotFound
 
 SETTINGS = load_settings()
 LEVELS = ["débutant", "intermédiaire", "avancé"]
@@ -29,15 +30,14 @@ def get_limiter() -> Limiter:
 
 def get_client():
     key = os.environ.get("OPENCODE_API_KEY")
-    return OpenAI(base_url=SETTINGS.llm_base_url, api_key=key) if key else None
+    return OpenAI(base_url=SETTINGS.llm_base_url, api_key=key, timeout=60, max_retries=1) if key else None
 
 
 def current_visitor() -> str:
     if "session_id" not in st.session_state:
         st.session_state.session_id = uuid.uuid4().hex
     try:
-        forwarded = st.context.headers.get("X-Forwarded-For")
-        ip = forwarded.split(",")[0].strip() if forwarded else None
+        ip = client_ip(st.context.headers, os.environ.get("TRUSTED_IP_HEADER", "X-Forwarded-For"))
     except Exception:
         ip = None
     return visitor_id(st.session_state.session_id, ip)
@@ -47,8 +47,11 @@ def load_course(data: bytes, key: str):
     """Index the course once per session and course."""
     if st.session_state.get("course_key") != key:
         pages = extract_pages(data, SETTINGS)
+        previous = st.session_state.pop("collection", None)
         st.session_state.collection = build_index(split_pages(pages, SETTINGS))
         st.session_state.course_key = key
+        if previous is not None:
+            drop_index(previous)
     return st.session_state.collection
 
 
@@ -72,13 +75,14 @@ def render_quiz_tab():
     if st.button("Générer le quiz", type="primary", disabled=data is None):
         try:
             with st.spinner("Indexation du cours et génération du quiz…"):
-                collection = load_course(data, hashlib.sha256(data).hexdigest())
-                result = produce_quiz(get_client(), get_limiter(), current_visitor(), collection,
+                digest = hashlib.sha256(data).hexdigest()
+                result = produce_quiz(get_client(), get_limiter(), current_visitor(),
+                                      lambda: load_course(data, digest),
                                       course, theme, EXERCISES[exercise], level, n, SETTINGS)
-        except PdfRejected as exc:
+        except (PdfRejected, ThemeNotFound, GenerationFailed) as exc:
             st.error(str(exc))
-        except GenerationFailed as exc:
-            st.error(str(exc))
+        except Exception:
+            st.error("Une erreur inattendue est survenue. Réessaie dans un instant.")
         else:
             st.session_state.result = result
             st.session_state.submitted = False
